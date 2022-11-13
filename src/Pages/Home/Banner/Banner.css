@@ -1,0 +1,6 @@
+.BannerBg{
+   background: linear-gradient(rgba(255, 255, 255, 0.662), rgba(255, 255, 255, 0.9)), url('../../../assets/images/chair.png') no-repeat;
+   background-size:cover;
+   background-position:center center ;
+   background-attachment: fixed;
+}
