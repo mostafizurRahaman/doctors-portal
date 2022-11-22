@@ -1,7 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
+import toast from "react-hot-toast";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../../AuthProvider/AuthProvider";
 
-const BookingModal = ({ treatment , date, setTreatment}) => {
-   const { name, slots } = treatment;
+const BookingModal = ({ treatment , date,refetch,  setTreatment}) => {
+   const {user, logOut} = useContext(AuthContext); 
+   const { name, slots , price} = treatment;
+   const navigate = useNavigate(); 
+   const location = useLocation(); 
 
    const handleSubmit = (e) => {
       e.preventDefault(); 
@@ -17,9 +23,39 @@ const BookingModal = ({ treatment , date, setTreatment}) => {
          slot, 
          email, 
          phone, 
+         price
       }
       console.log(booking)
-      setTreatment(null); 
+
+      fetch('http://localhost:5000/bookings', {
+         method: "POST", 
+         headers: {
+            'content-type': 'application/json', 
+            authorization: `Bearer ${localStorage.getItem('doctorsPortalToken')}`,
+         }, 
+         body: JSON.stringify(booking)
+      })
+      .then(res => {
+         if(res.status === 401  || res.status === 403){
+            logOut(); 
+            return navigate('/login'); 
+         }
+         return res.json(); 
+      })
+      .then(data => {
+         console.log(data); 
+         if(data.acknowledged){
+            setTreatment(null); 
+            toast.success('Booking confirmed');     
+            refetch();      
+         }
+         else{
+            setTreatment(null); 
+            toast.error(data.message);
+         }
+      })
+      .catch(err => console.log(err)); 
+     
    
    }
    return (
@@ -56,12 +92,16 @@ const BookingModal = ({ treatment , date, setTreatment}) => {
                      placeholder="full name "
                      className="input w-full input-bordered "
                      name="fullName"
+                     defaultValue={user?.displayName}
+                     disabled
                   />
                   <input
                      type="text"
                      placeholder="email"
                      className="input w-full input-bordered"
                      name="email"
+                     defaultValue={user?.email}
+                     disabled
                   />
                   <input
                      type="text"

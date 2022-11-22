@@ -36,6 +36,7 @@ const AuthProvider = ({ children }) => {
 
 
    const logOut = () => {
+      localStorage.removeItem('doctorsPortalToken'); 
       return signOut(auth); 
    }
 
@@ -54,8 +55,7 @@ const AuthProvider = ({ children }) => {
          setUser(currentUser); 
          setLoading(false); 
       })
-
-
+     
       return ()=> unsubscribe(); 
    })
    const authInfo = {

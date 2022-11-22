@@ -1,8 +1,10 @@
+import { set } from "date-fns";
 import React, { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../AuthProvider/AuthProvider";
+import useToken from "../../hooks/useToken";
 import ForgetPasswordModal from "./ForgetPasswordModal/ForgetPasswordModal";
 
 const Login = () => {
@@ -13,18 +15,24 @@ const Login = () => {
       handleSubmit,
    } = useForm();
    const [loginError, setLoginError] = useState("");
-   const { LogIn,  GoogleLogin} = useContext(AuthContext);
+   const { LogIn, GoogleLogin } = useContext(AuthContext);
    const location = useLocation();
-   const navigate = useNavigate();
    const from = location.state?.from?.pathname || "/";
+   const navigate = useNavigate();
+   const [loginUserEmail, setLoginUserEmail] = useState("");
+   const { token } = useToken(loginUserEmail);
+   if (token) {
+      navigate(from, { replace: true });
+   }
    const handleLogin = (data) => {
       setLoginError("");
       const { email, password } = data;
       LogIn(email, password)
          .then((res) => {
             const user = res.user;
-            console.log(user);
-            navigate(from, { replace: true });
+            console.log(email);
+            setLoginUserEmail(email);
+            toast.success("Congratulations, You login successfully.");
          })
          .catch((err) => {
             setLoginError(err.message);
@@ -32,12 +40,28 @@ const Login = () => {
    };
 
    const handleGoogleLogin = () => {
-         
       GoogleLogin()
          .then((res) => {
             const user = res.user;
-            console.log(user);
-            toast.success("Congratulations !!! Your login successfully ");
+            const currentUser = {
+               name: user.displayName,
+               email: user.email,
+            };
+            fetch("http://localhost:5000/users", {
+               method: "POST",
+               headers: {
+                  "content-type": "application/json",
+               },
+               body: JSON.stringify(currentUser),
+            })
+               .then((res) => res.json())
+               .then(data=> {
+                  if(data?.acknowledged || data?.alreadyAvailable){
+                     setLoginUserEmail(user.email); 
+                     toast('Google Login SuccessFully'); 
+                  }
+               })
+               .catch((err) => console.log(err));
          })
          .catch((err) => console.log(err));
    };
@@ -123,7 +147,10 @@ const Login = () => {
                </p>
             </form>
             <div className="divider">OR</div>
-            <button className="btn btn-outline w-full  text-accent" onClick={handleGoogleLogin}>
+            <button
+               className="btn btn-outline w-full  text-accent"
+               onClick={handleGoogleLogin}
+            >
                CONTINUE WITH GOOGLE
             </button>
          </div>
